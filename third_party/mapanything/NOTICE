@@ -1,0 +1,26 @@
+NOTICE — StreamRig's reduced MapAnything backbone
+=================================================
+
+This directory contains a reduced copy of MapAnything v1.0.1 (commit
+fde8425513178bb4f89fba9828193e6be3ece248), redistributed under the
+Apache License 2.0. See LICENSE in this directory. Upstream repository:
+https://github.com/facebookresearch/map-anything . Copyright (c) Meta
+Platforms, Inc. and affiliates.
+
+StreamRig uses the frozen MapAnything backbone during data preprocessing to
+produce multi-view information-sharing features. The model implementation
+(mapanything/models/mapanything/model.py) and the geometry, image-processing,
+inference, misc and warnings helpers under mapanything/utils/ are identical
+to upstream v1.0.1.
+
+Modifications relative to upstream v1.0.1: the upstream datasets, training
+tools, benchmark wrappers, external model implementations, tracking
+utilities, visualization helpers, and unrelated model variants were removed.
+mapanything/models/__init__.py and mapanything/models/mapanything/__init__.py
+were reduced so that the package registry exposes only MapAnything. The
+vendored pyproject.toml uses the included README filename, discovers
+subpackages, and omits the unused rerun visualization dependency and optional
+extras for removed components. No numerical operation was changed.
+
+The backbone still relies on `uniception` and the matching DINOv2-large
+weights; StreamRig's README describes the required checkpoint and setup.

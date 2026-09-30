@@ -1,0 +1,45 @@
+# Modified for StreamRig (see NOTICE).
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mapanything"
+version = "1.0"
+description = "Universal Feed-Forward Metric 3D Reconstruction"
+readme = "MAPANYTHING_README.md"
+authors = [{ name = "Nikhil Keetha", email = "keethanikhil@gmail.com" }]
+requires-python = ">=3.10.0"
+dependencies = [
+    "huggingface_hub",
+    "einops",
+    "numpy<2",
+    "pillow",
+    "torch",
+    "torchvision",
+    "omegaconf",
+    "opencv-python-headless==4.10.0.84",
+    "uniception",
+]
+
+# Setuptools configuration
+[tool.setuptools]
+# Disable automatic package discovery to avoid conflicts
+[tool.setuptools.packages.find]
+include = ["mapanything*"]
+
+# Ruff for linting
+[tool.ruff]
+# Enable the isort rules.
+lint.extend-select = ["I"]
+
+# Following https://www.internalfb.com/wiki/Python/code_formatting/pyfmt/
+target-version = "py310"
+
+# Following https://www.internalfb.com/wiki/Python/code_formatting/pyfmt/
+[tool.ruff.lint.isort]
+case-sensitive = false
+combine-as-imports = true
+detect-same-package = false
+order-by-type = false
+known-first-party = ["mapanything", "uniception"]

@@ -1,0 +1,35 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.ipynb_checkpoints/
+.pytest_cache/
+
+# ---------------------------------------------------------------------------
+# Large assets — distributed separately, NOT tracked in git:
+#   - release_weights/     StreamRig weights (.pth)
+#   - map-anything-model/  the frozen MapAnything backbone checkpoint
+#   - outputs/             training runs, checkpoints, evaluation dumps
+# See README "Checkpoints" for the download links.
+# ---------------------------------------------------------------------------
+release_weights/*
+!release_weights/SHA256SUMS
+map-anything-model/
+*.safetensors
+*.ckpt
+*.pth
+*.pt
+*.npz
+
+# Datasets / precomputed feature caches (info-sharing bf16 tensors are huge)
+data/
+*_infoshare*/
+
+# Misc outputs / scratch
+outputs/
+*.log
+tmp/
+.DS_Store

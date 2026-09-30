@@ -1,0 +1,63 @@
+# ============================================================================
+# nclt_streamrig.yaml -- StreamRig 在 NCLT（5 目 rig）上的标准训练配置。
+#
+# 发布的 NCLT 模型所用配置（路径已占位化）。对应流程：
+#   重定位模型 --warm-start--> 流式训练。
+#
+# 训练规模：4 × GPU，每卡 batch_size=4 → global batch 16，10 epochs。
+# 若 GPU 数不同，调整每卡 batch_size；程序强制检查 global_batch_size 与
+# effective_batch_size。
+#
+# 用法：
+#   bash scripts/train.sh 0,1,2,3 \
+#        configs/nclt_streamrig.yaml outputs/nclt_streamrig 29601
+# ============================================================================
+
+model:
+  num_latents: 16                 # Rig-Resampler 每相机输出的 latent 数；5 目合计 80 token/rig
+  num_frames_per_group: 5         # 每个 rig 组的相机数 W（NCLT = 5 目）
+  bridge_merged_layers: 8         # Causal Bridge 的 merged 自注意力层数
+  pose_head_hidden_dim: 512       # Stream Pose Head 的 MLP 隐层宽度
+  pose_head_layers: 3             # Stream Pose Head 的 MLP 层数
+  # 结构固定、无配置项：锚快照布局；无时序位置编码（NoPE）；
+  # 组 embedding 只区分 anchor/query 两种角色；pose head 身份编码对所有查询组共享；旋转用 6D 表示；
+  # warm-start 时初始化源未覆盖的 merged 层做残差恒等零初始化。
+  warmstart_ckpt: /path/to/reloc_checkpoint.pth   # 初始化用的重定位模型（见 README 的 Training）
+
+data:
+  # 训练集（评测数据由 scripts/eval_nclt.sh 的参数指定）
+  step1_root: /path/to/nclt_meta/step1_rig_trajectories_train   # rig 轨迹 TUM 文件
+  step2_root: /path/to/nclt_meta/step2_rig5_configs_train       # rig 内外参配置
+  infoshare_root: /path/to/nclt_infoshare_train                 # info-sharing 特征缓存（bf16）
+  num_rigs: 48                    # 采样窗口的名义 rig 组数上限（与 n_max 配合）
+  n_min: 6                        # 变长窗口最短 N
+  n_max: 48                       # 变长窗口最长 N
+  length_bias_power: 1.0          # 窗口长度采样权重指数（1.0 = 按长度线性加权）
+  num_cameras: 5                  # rig 相机数 K（NCLT 5 目）
+  stride_min: 1                   # 相邻 rig 之间的帧间隔下界
+  stride_max: 6                   # 相邻 rig 之间的帧间隔上界
+  gap_threshold_ms: 400           # 相邻帧时间差超过该阈值视为轨迹断裂，不跨断裂采窗
+  min_run_span_ms: 30000          # 连续可用片段最短时长，短于此的片段丢弃
+  samples_per_epoch: 57600        # 每 epoch 采样的窗口数（决定 steps/epoch）
+  seed: 42                        # 数据采样随机种子
+
+train:
+  global_batch_size: 16          # 每次前向跨全部 GPU 的窗口数 = batch_size × world_size
+  effective_batch_size: 16       # 每次优化步的窗口数 = global_batch_size × accum_steps
+  batch_size: 4                   # 每卡训练 batch；4 卡 → global batch 16
+  accum_steps: 1                  # 梯度累积步数（1 = 不累积）
+  num_workers: 4                  # 每个 rank 的 DataLoader worker 数
+  lr: 0.0001                      # AdamW 峰值学习率
+  weight_decay: 0.01              # AdamW weight decay
+  epochs: 10                      # 训练轮数
+  warmup_steps: 500               # 学习率线性 warmup 步数
+  min_lr_ratio: 0.05              # 余弦退火终点学习率 = lr × min_lr_ratio
+  grad_clip: 1.0                  # 梯度范数裁剪阈值
+  rotation_weight: 5.0            # 旋转项损失权重
+  translation_weight: 1.0         # 平移项损失权重
+  intra_weight: 0.5               # 组内（同一 rig 内各相机）监督权重
+  inter_weight: 1.0               # 组间（跨 rig 时刻）监督权重
+  # 损失形式固定（无配置项）：旋转 sqrt chordal；平移 L1 按 GT 位移长度归一化；各步距均匀平均
+  loss_clamp: 10.0                # 总损失上限截断（默认值，显式写出）
+  log_every: 50                   # 每多少步打印一次训练日志
+  save_every_steps: 4800          # 每多少步存一次 checkpoint

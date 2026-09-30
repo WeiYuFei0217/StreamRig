@@ -1,0 +1,66 @@
+# ============================================================================
+# kitti360_streamrig.yaml -- StreamRig 在 KITTI-360（4 目 rig）上的标准训练配置。
+#
+# 发布的 KITTI-360 模型所用配置（路径已占位化）。对应流程：
+#   重定位模型 --warm-start--> KITTI-360 流式训练（变长窗口 N∈[3,12]）。
+#
+# rig = image_00/01 透视双目（官方 data_rect，主点居中方形裁剪）+ image_02/03
+#       鱼眼（MEI 模型重映射成 90° 方形虚拟针孔图），共 4 目。
+# 训练帧间隔 ∈ [1,3]；评测（scripts/eval_kitti360.sh，test 划分）使用 stride 3。
+#
+# 训练规模：4 × GPU，每卡 batch_size=4 → global batch 16，10 epochs。
+# 若 GPU 数不同，调整每卡 batch_size；程序强制检查 global_batch_size 与 effective_batch_size。
+#
+# 用法：
+#   bash scripts/train.sh 0,1,2,3 \
+#        configs/kitti360_streamrig.yaml outputs/k360_streamrig 29611
+# ============================================================================
+
+model:
+  num_latents: 16                 # Rig-Resampler 每相机输出的 latent 数；4 目合计 64 token/rig
+  num_frames_per_group: 4         # 每个 rig 组的相机数 W（KITTI-360 = 4 目）
+  bridge_merged_layers: 8         # Causal Bridge 的 merged 自注意力层数
+  pose_head_hidden_dim: 512       # Stream Pose Head 的 MLP 隐层宽度
+  pose_head_layers: 3             # Stream Pose Head 的 MLP 层数
+  # 结构固定、无配置项：锚快照布局；无时序位置编码（NoPE）；
+  # 组 embedding 只区分 anchor/query 两种角色；pose head 身份编码对所有查询组共享；旋转用 6D 表示；
+  # warm-start 时初始化源未覆盖的 merged 层做残差恒等零初始化。
+  warmstart_ckpt: /path/to/reloc_checkpoint.pth   # 初始化用的重定位模型（见 README 的 Training）
+
+data:
+  dataset_type: kitti360          # 选择 Kitti360StreamDataset（缺省走 NCLT 布局的 StreamOdomDataset）
+  processed_root: /path/to/kitti360_streamrig_metadata   # 预处理元数据根目录（step1 产物，不复制原图）
+  infoshare_root: /path/to/kitti360_infoshare_bf16       # info-sharing 特征缓存（bf16，train/test 共用）
+  train_split: train              # 训练 split 名（drive 划分见 processed_root 下的索引）
+  num_rigs: 12                    # 采样窗口的名义 rig 组数上限（与 n_max 配合）
+  image_size: 224                 # 预处理后单相机分辨率（与 processed_root 的 manifest 做一致性校验）
+  stride_min: 1                   # 相邻 rig 之间的帧间隔下界
+  stride_max: 3                   # 相邻 rig 之间的帧间隔上界
+  gap_threshold_ms: 500           # 相邻帧时间差超过该阈值视为轨迹断裂，不跨断裂采窗
+  min_run_span_ms: 30000          # 连续可用片段最短时长，短于此的片段丢弃
+  samples_per_epoch: 48000        # 每 epoch 采样的窗口数（决定 steps/epoch）
+  seed: 42                        # 数据采样随机种子
+  n_min: 3                        # 变长窗口最短 N
+  n_max: 12                       # 变长窗口最长 N
+  length_bias_power: 1.0          # 窗口长度采样权重指数（1.0 = 按长度线性加权）
+
+train:
+  global_batch_size: 16          # 每次前向跨全部 GPU 的窗口数 = batch_size × world_size
+  effective_batch_size: 16       # 每次优化步的窗口数 = global_batch_size × accum_steps
+  batch_size: 4                   # 每卡训练 batch；4 卡 → global batch 16
+  accum_steps: 1                  # 梯度累积步数（1 = 不累积）
+  num_workers: 4                  # 每个 rank 的 DataLoader worker 数
+  lr: 0.0001                      # AdamW 峰值学习率
+  weight_decay: 0.01              # AdamW weight decay
+  epochs: 10                      # 训练轮数
+  warmup_steps: 500               # 学习率线性 warmup 步数
+  min_lr_ratio: 0.05              # 余弦退火终点学习率 = lr × min_lr_ratio
+  grad_clip: 1.0                  # 梯度范数裁剪阈值
+  rotation_weight: 5.0            # 旋转项损失权重
+  translation_weight: 1.0         # 平移项损失权重
+  intra_weight: 0.5               # 组内（同一 rig 内各相机）监督权重
+  inter_weight: 1.0               # 组间（跨 rig 时刻）监督权重
+  # 损失形式固定（无配置项）：旋转 sqrt chordal；平移 L1 按 GT 位移长度归一化；各步距均匀平均
+  loss_clamp: 10.0                # 总损失上限截断（默认值，显式写出）
+  log_every: 50                   # 每多少步打印一次训练日志
+  save_every_steps: 5000          # 每多少步存一次 checkpoint
