@@ -1,7 +1,8 @@
 # StreamRig：利用相机组内几何的流式多相机里程计
 
 <p align="center">
-  <a href="https://weiyufei0217.github.io/StreamRig_Anonymous/"><img src="https://img.shields.io/badge/%F0%9F%8C%90%20Project%20Page-2EA44F?style=for-the-badge" alt="Project Page"></a>
+  <a href="https://weiyufei0217.github.io/StreamRig/"><img src="https://img.shields.io/badge/%F0%9F%8C%90%20Project%20Page-2EA44F?style=for-the-badge" alt="Project Page"></a>
+  <a href="https://arxiv.org/abs/2609.40244"><img src="https://img.shields.io/badge/arXiv-2609.40244-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv"></a>
 </p>
 
 [English](README.md)
@@ -76,6 +77,22 @@ bash scripts/eval_kitti360.sh \
 
 指标采用 KITTI 里程计协议（100–800 m 子段，stride 3），ATE 在完整序列上做 SE(3) 对齐；
 录制中断处前后两段以真值相对位姿衔接后再计算指标。NCLT 评测约需 35 GB 内存。
+
+## 引用
+
+如果本工作对你有帮助，请引用：
+
+```bibtex
+@misc{wei2026streamrigexploitingintrariggeometry,
+      title={StreamRig: Exploiting Intra-Rig Geometry for Streaming Multi-Camera Odometry},
+      author={Yufei Wei and Shuhao Ye and Qi Wang and Xin Zheng and Qing Huang and Rong Xiong and Yue Wang},
+      year={2026},
+      eprint={2609.40244},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2609.40244},
+}
+```
 
 ## 致谢与许可
 

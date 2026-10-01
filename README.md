@@ -1,7 +1,8 @@
 # StreamRig: Exploiting Intra-Rig Geometry for Streaming Multi-Camera Odometry
 
 <p align="center">
-  <a href="https://weiyufei0217.github.io/StreamRig_Anonymous/"><img src="https://img.shields.io/badge/%F0%9F%8C%90%20Project%20Page-2EA44F?style=for-the-badge" alt="Project Page"></a>
+  <a href="https://weiyufei0217.github.io/StreamRig/"><img src="https://img.shields.io/badge/%F0%9F%8C%90%20Project%20Page-2EA44F?style=for-the-badge" alt="Project Page"></a>
+  <a href="https://arxiv.org/abs/2609.40244"><img src="https://img.shields.io/badge/arXiv-2609.40244-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white" alt="arXiv"></a>
 </p>
 
 [中文](README_CN.md)
@@ -82,6 +83,22 @@ Metrics follow the KITTI odometry protocol on 100–800 m segments at stride 3, 
 alignment on complete sequences. Where a recording is interrupted, the pieces on either side are
 joined with the ground-truth relative pose before the metrics are computed.
 NCLT evaluation needs about 35 GB of host memory.
+
+## Citation
+
+If you find this work useful, please cite:
+
+```bibtex
+@misc{wei2026streamrigexploitingintrariggeometry,
+      title={StreamRig: Exploiting Intra-Rig Geometry for Streaming Multi-Camera Odometry},
+      author={Yufei Wei and Shuhao Ye and Qi Wang and Xin Zheng and Qing Huang and Rong Xiong and Yue Wang},
+      year={2026},
+      eprint={2609.40244},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2609.40244},
+}
+```
 
 ## Acknowledgements and license
 
